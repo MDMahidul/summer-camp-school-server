@@ -4,7 +4,7 @@ const app = express();
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5005;
 
 /* middlewares */
@@ -141,6 +141,21 @@ async function run() {
       const result = { student: user?.role === "Student" };
       res.send(result);
     });
+
+    /* update user role */
+    app.put("/users/admin/:id",verifyJWT,verifyAdmin,async(req,res)=>{
+      const id = req.params.id;
+      const {role} = req.body;
+      const filter = {_id: new ObjectId(id)};
+      const updateRole ={
+        $set:{
+          role: role,
+        }
+      };
+      const result = await userCollection.updateOne(filter,updateRole);
+      res.send(result)
+
+    })
 
     /* ------------------------------------------------------- */
     // Send a ping to confirm a successful connection
