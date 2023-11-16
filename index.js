@@ -95,7 +95,7 @@ async function run() {
     });
 
     /* get all user data */
-    app.get("/users/:email", verifyJWT,verifyAdmin, async (req, res) => {
+    app.get("/users/:email", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
@@ -108,7 +108,39 @@ async function run() {
       res.send(result);
     });
 
-    
+    /* check the user admin */
+    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ admin: false });
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const result = { admin: user?.role === "Admin" };
+      res.send(result);
+    });
+    /* check the user instructor */
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ instructor: false });
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const result = { instructor: user?.role === "Instructor" };
+      res.send(result);
+    });
+    /* check the user student */
+    app.get("/users/student/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ student: false });
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const result = { student: user?.role === "Student" };
+      res.send(result);
+    });
 
     /* ------------------------------------------------------- */
     // Send a ping to confirm a successful connection
