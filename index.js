@@ -56,6 +56,7 @@ async function run() {
 
     /* create db collections*/
     const userCollection = client.db("northernDB").collection("users");
+    const courseCollection = client.db("northernDB").collection("courses");
 
     /* create jwt token */
     app.post("/jwt", (req, res) => {
@@ -78,6 +79,19 @@ async function run() {
       }
       next();
     };
+
+    /* check user role as instructor */
+    const verifyInstructor = async(req,res,next)=>{
+      const email = req.decoded.email;
+      const query = {email:email};
+      const user = await userCollection.findOne(query);
+      if(user?.role !== "Instructor"){
+        return res
+          .status(403)
+          .send({ error: true, message: "Unauthorized Access" });
+      }
+      next();
+    }
 
     /* ------------------ user realted ---------------------- */
     /* save users data in db */
@@ -155,6 +169,25 @@ async function run() {
       const result = await userCollection.updateOne(filter,updateRole);
       res.send(result)
 
+    })
+
+    /* ------------------------------------------------------- */
+    /* ----------------course related api--------------------- */
+
+    /* add course */
+    app.post('/course',verifyJWT,verifyInstructor,async(req,res)=>{
+      const newItem = req.body;
+      const result = await courseCollection.insertOne(newItem);
+      res.send(result);
+    })
+
+    /* get single user courses */
+    app.get('/courses/:email',async(req,res)=>{
+      const email = req.params.email;
+      console.log(email);
+      const query = {email:email}
+      const result = await courseCollection.find(query).toArray();
+      res.send(result);
     })
 
     /* ------------------------------------------------------- */
