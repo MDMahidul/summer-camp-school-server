@@ -81,17 +81,17 @@ async function run() {
     };
 
     /* check user role as instructor */
-    const verifyInstructor = async(req,res,next)=>{
+    const verifyInstructor = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = {email:email};
+      const query = { email: email };
       const user = await userCollection.findOne(query);
-      if(user?.role !== "Instructor"){
+      if (user?.role !== "Instructor") {
         return res
           .status(403)
           .send({ error: true, message: "Unauthorized Access" });
       }
       next();
-    }
+    };
 
     /* ------------------ user realted ---------------------- */
     /* save users data in db */
@@ -109,13 +109,15 @@ async function run() {
     });
 
     /* get all user data */
-    app.get("/users/:email", verifyJWT, verifyAdmin, async (req, res) => {
+    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
+       console.log("get all user data hitted");
       const result = await userCollection.find().toArray();
       res.send(result);
     });
 
     /* get single user */
     app.get("/user/:email", async (req, res) => {
+       console.log("get single user hitted");
       const email = req.params.email;
       const query = { email: email };
       const result = await userCollection.findOne(query);
@@ -157,38 +159,52 @@ async function run() {
     });
 
     /* update user role */
-    app.put("/users/admin/:id",verifyJWT,verifyAdmin,async(req,res)=>{
+    app.put("/users/admin/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const {role} = req.body;
-      const filter = {_id: new ObjectId(id)};
-      const updateRole ={
-        $set:{
+      const { role } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateRole = {
+        $set: {
           role: role,
-        }
+        },
       };
-      const result = await userCollection.updateOne(filter,updateRole);
-      res.send(result)
+      const result = await userCollection.updateOne(filter, updateRole);
+      res.send(result);
+    });
 
-    })
+
+    /* get all the instructor data */
+    app.get("/instructors",async (req, res) => {
+      console.log("get all the instructor data hitted");
+      const result = await userCollection.find({ role: "Instructor" }).toArray();
+      res.send(result);
+    });
 
     /* ------------------------------------------------------- */
     /* ----------------course related api--------------------- */
 
     /* add course */
-    app.post('/course',verifyJWT,verifyInstructor,async(req,res)=>{
+    app.post("/course", verifyJWT, verifyInstructor, async (req, res) => {
       const newItem = req.body;
       const result = await courseCollection.insertOne(newItem);
       res.send(result);
-    })
+    });
 
     /* get single user courses */
-    app.get('/courses/:email',async(req,res)=>{
+    app.get("/course/:email", async (req, res) => {
       const email = req.params.email;
       console.log(email);
-      const query = {email:email}
+      const query = { email: email };
       const result = await courseCollection.find(query).toArray();
       res.send(result);
-    })
+    });
+
+    /* get all courses data */
+    app.get("/courses", verifyJWT, verifyAdmin, async (req, res) => {
+      console.log("get all courses data hitted");
+      const result = await courseCollection.find().toArray();
+      res.send(result);
+    });
 
     /* ------------------------------------------------------- */
     // Send a ping to confirm a successful connection
