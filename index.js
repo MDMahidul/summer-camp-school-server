@@ -110,14 +110,14 @@ async function run() {
 
     /* get all user data */
     app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
-       console.log("get all user data hitted");
+      console.log("get all user data hitted");
       const result = await userCollection.find().toArray();
       res.send(result);
     });
 
     /* get single user */
     app.get("/user/:email", async (req, res) => {
-       console.log("get single user hitted");
+      console.log("get single user hitted");
       const email = req.params.email;
       const query = { email: email };
       const result = await userCollection.findOne(query);
@@ -172,11 +172,12 @@ async function run() {
       res.send(result);
     });
 
-
     /* get all the instructor data */
-    app.get("/instructors",async (req, res) => {
+    app.get("/instructors", async (req, res) => {
       console.log("get all the instructor data hitted");
-      const result = await userCollection.find({ role: "Instructor" }).toArray();
+      const result = await userCollection
+        .find({ role: "Instructor" })
+        .toArray();
       res.send(result);
     });
 
@@ -203,6 +204,21 @@ async function run() {
     app.get("/courses", verifyJWT, verifyAdmin, async (req, res) => {
       console.log("get all courses data hitted");
       const result = await courseCollection.find().toArray();
+      res.send(result);
+    });
+
+    /* update course status */
+    app.put("/course/admin/:id", verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const { status,feedback } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateStatus = {
+        $set: {
+          status: status,
+          feedback: feedback
+        },
+      };
+      const result = await courseCollection.updateOne(filter, updateStatus);
       res.send(result);
     });
 
