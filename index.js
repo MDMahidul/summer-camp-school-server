@@ -200,10 +200,28 @@ async function run() {
       res.send(result);
     });
 
+    /* get single course */
+    app.get("/course/details/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await courseCollection.findOne(filter);
+      res.send(result);
+    });
+
     /* get all courses data */
-    app.get("/courses", verifyJWT, verifyAdmin, async (req, res) => {
-      console.log("get all courses data hitted");
+    app.get("/courses/admin", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await courseCollection.find().toArray();
+      res.send(result);
+    });
+
+    /* get all approved courses data */
+    app.get("/courses", async (req, res) => {
+      const filter ={status: "Approved"}
+      const sortOptions = { enrolled: -1 };
+      const result = await courseCollection
+        .find(filter)
+        .sort(sortOptions)
+        .toArray();
       res.send(result);
     });
 
