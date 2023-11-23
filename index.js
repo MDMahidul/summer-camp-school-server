@@ -159,7 +159,7 @@ async function run() {
     });
 
     /* update user role */
-    app.put("/users/admin/:id", verifyJWT, verifyAdmin, async (req, res) => {
+    app.patch("/users/admin/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const { role } = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -169,6 +169,20 @@ async function run() {
         },
       };
       const result = await userCollection.updateOne(filter, updateRole);
+      res.send(result);
+    });
+
+    /* update user data */
+    app.put("/user/:id", verifyJWT,async(req,res)=>{
+      const id= req.params.id;
+      const data = req.body;
+      console.log(data);
+      const filter = {_id: new ObjectId(id)};
+      const options = { upsert: true };
+      const updateInfo={
+        $set:data
+      }
+      const result = await userCollection.updateOne(filter,updateInfo,options);
       res.send(result);
     });
 
@@ -226,17 +240,18 @@ async function run() {
     });
 
     /* update course status */
-    app.put("/course/admin/:id", verifyJWT, verifyAdmin, async (req, res) => {
+    app.patch("/course/admin/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const { status,feedback } = req.body;
       const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
       const updateStatus = {
         $set: {
           status: status,
           feedback: feedback
         },
       };
-      const result = await courseCollection.updateOne(filter, updateStatus);
+      const result = await courseCollection.updateOne(filter, updateStatus,options);
       res.send(result);
     });
 
