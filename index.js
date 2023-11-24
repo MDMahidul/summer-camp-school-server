@@ -173,16 +173,20 @@ async function run() {
     });
 
     /* update user data */
-    app.put("/user/:id", verifyJWT,async(req,res)=>{
-      const id= req.params.id;
+    app.put("/user/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
       const data = req.body;
       console.log(data);
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
-      const updateInfo={
-        $set:data
-      }
-      const result = await userCollection.updateOne(filter,updateInfo,options);
+      const updateInfo = {
+        $set: data,
+      };
+      const result = await userCollection.updateOne(
+        filter,
+        updateInfo,
+        options
+      );
       res.send(result);
     });
 
@@ -217,6 +221,15 @@ async function run() {
     /* get single course */
     app.get("/course/details/:id", async (req, res) => {
       const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const result = await courseCollection.findOne(filter);
+      res.send(result);
+    });
+    /* get single course */
+    app.get("/course/instructor/details/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
       const filter = { _id: new ObjectId(id) };
       const result = await courseCollection.findOne(filter);
       res.send(result);
@@ -230,7 +243,7 @@ async function run() {
 
     /* get all approved courses data */
     app.get("/courses", async (req, res) => {
-      const filter ={status: "Approved"}
+      const filter = { status: "Approved" };
       const sortOptions = { enrolled: -1 };
       const result = await courseCollection
         .find(filter)
@@ -242,16 +255,46 @@ async function run() {
     /* update course status */
     app.patch("/course/admin/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const { status,feedback } = req.body;
+      const { status, feedback } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updateStatus = {
         $set: {
           status: status,
-          feedback: feedback
+          feedback: feedback,
         },
       };
-      const result = await courseCollection.updateOne(filter, updateStatus,options);
+      const result = await courseCollection.updateOne(
+        filter,
+        updateStatus,
+        options
+      );
+      res.send(result);
+    });
+
+    /* update single course data */
+    app.put("/course/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      console.log(data);
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateInfo = {
+        $set: data,
+      };
+      const result = await courseCollection.updateOne(
+        filter,
+        updateInfo,
+        options
+      );
+      res.send(result);
+    });
+
+    /* delete course */
+    app.delete("/course/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await courseCollection.deleteOne(query);
       res.send(result);
     });
 
