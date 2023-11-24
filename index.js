@@ -57,6 +57,7 @@ async function run() {
     /* create db collections*/
     const userCollection = client.db("northernDB").collection("users");
     const courseCollection = client.db("northernDB").collection("courses");
+    const cartCollection = client.db("northernDB").collection("carts");
 
     /* create jwt token */
     app.post("/jwt", (req, res) => {
@@ -299,6 +300,31 @@ async function run() {
     });
 
     /* ------------------------------------------------------- */
+
+    /*-----------------------cart related Api-------------------- */
+    /* add data to cart */
+    app.post("/carts",async(req,res)=>{
+      const data = req.body;
+      const result = await cartCollection.insertOne(data);
+      res.send(result);
+    })
+
+    /* get cart data */
+    app.get("/carts",async(req,res)=>{
+      const email=req.query.email;
+     /*  if(!email){
+        res.send([]);
+      } */
+      /* const decodedEmail = req.decoded.email;
+      if(email !== decodedEmail){
+        return res.status(403).send({error:true,message:"Unauthorized access!!!"})
+      } */
+      const query = {email:email};
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    })
+    /* ----------------------------------------------------------- */
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
