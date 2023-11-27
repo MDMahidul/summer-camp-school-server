@@ -5,6 +5,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 const port = process.env.PORT || 5005;
 
 /* middlewares */
@@ -58,6 +59,7 @@ async function run() {
     const userCollection = client.db("northernDB").collection("users");
     const courseCollection = client.db("northernDB").collection("courses");
     const cartCollection = client.db("northernDB").collection("carts");
+    const paymentCollection = client.db("northernDB").collection("payment");
 
     /* create jwt token */
     app.post("/jwt", (req, res) => {
@@ -303,27 +305,48 @@ async function run() {
 
     /*-----------------------cart related Api-------------------- */
     /* add data to cart */
-    app.post("/carts",async(req,res)=>{
+    app.post("/carts", async (req, res) => {
       const data = req.body;
       const result = await cartCollection.insertOne(data);
       res.send(result);
-    })
+    });
 
     /* get cart data */
-    app.get("/carts",async(req,res)=>{
-      const email=req.query.email;
-     /*  if(!email){
-        res.send([]);
-      } */
-      /* const decodedEmail = req.decoded.email;
-      if(email !== decodedEmail){
-        return res.status(403).send({error:true,message:"Unauthorized access!!!"})
-      } */
-      const query = {email:email};
+    app.get("/carts", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
       const result = await cartCollection.find(query).toArray();
       res.send(result);
-    })
+    });
+
+    /* delete cart data */
+    app.delete("/carts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartCollection.deleteOne(query);
+      res.send(result);
+    });
     /* ----------------------------------------------------------- */
+
+    /* ---------- payment related ---------------- */
+
+    /* create payment intent */
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { totalprice } = req.body;
+      const amount = parseInt(totalprice * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+
+    /* ------------------------------------------- */
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
