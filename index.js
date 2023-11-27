@@ -345,7 +345,34 @@ async function run() {
       });
     });
 
+    /* add payment data to db */
+    app.post("/payment", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      console.log(payment);
+      // Update the enrolled count for each course in courseItemsID concurrently
+      const updateEnrolled = payment.items.map(async (courseId) => {
+        const courseIdObject = new ObjectId(courseId.courseItemsID);
+        const updateResult = await courseCollection.updateOne(
+          { _id: courseIdObject },
+          { $inc: { enrolled: 1 } }
+        );
+        return { courseId, updateResult };
+      });
+      const insertCart = await paymentCollection.insertOne(payment);
+      const query = {
+        _id: { $in: payment.cartItemID.map((id) => new ObjectId(id)) },
+      };
+      const deleteCart = await cartCollection.deleteMany(query);
+      res.send({ insertCart, deleteCart, updateEnrolled });
+    });
 
+    /* get payments data */
+    app.get("/payments", async (req, res) => {
+      const email = req.query.email;
+      const query = { "userInfo.email": email };
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    });
     /* ------------------------------------------- */
 
     // Send a ping to confirm a successful connection
