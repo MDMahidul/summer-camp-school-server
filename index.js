@@ -350,20 +350,28 @@ async function run() {
       const payment = req.body;
       console.log(payment);
       // Update the enrolled count for each course in courseItemsID concurrently
-      const updateEnrolled = payment.items.map(async (courseId) => {
-        const courseIdObject = new ObjectId(courseId.courseItemsID);
-        const updateResult = await courseCollection.updateOne(
+      const updateEnrolledPromises = [];
+
+      for (const courseIdObject of payment.items.map(
+        (item) => new ObjectId(item.courseItemID)
+      )) {
+        const updatePromise = courseCollection.updateOne(
           { _id: courseIdObject },
           { $inc: { enrolled: 1 } }
         );
-        return { courseId, updateResult };
-      });
+
+        updateEnrolledPromises.push(updatePromise);
+      }
+
+      await Promise.all(updateEnrolledPromises);
+
       const insertCart = await paymentCollection.insertOne(payment);
       const query = {
         _id: { $in: payment.cartItemID.map((id) => new ObjectId(id)) },
       };
       const deleteCart = await cartCollection.deleteMany(query);
-      res.send({ insertCart, deleteCart, updateEnrolled });
+
+      res.send({ insertCart, deleteCart, updateEnrolledPromises }); 
     });
 
     /* get payments data */
@@ -372,6 +380,28 @@ async function run() {
       const query = { "userInfo.email": email };
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
+    });
+
+    /* get enrolled student data course wise */
+    app.get("/course/enrolled/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+
+      const query ={ "items.courseItemID": id }
+
+      //get the enrolled studetsdata
+      const result = await paymentCollection
+        .find(query, {
+          projection: {
+            _id: 0,
+            userInfo: 1,
+          },
+        })
+        .toArray();
+
+      //make an array of enrolled students
+      const userInfoArray = result.map((item) => item.userInfo).flat();
+
+      res.send(userInfoArray);
     });
     /* ------------------------------------------- */
 
